@@ -32,6 +32,7 @@ class EMeApp(QtWidgets.QMainWindow):
         if not file_path:
             return
         self.is_camera = False
+        self.ui.pushButton_KameraAc.setText("Kamerayı Aç")
         if file_path.lower().endswith(('.mp4', '.avi', '.mov')):
             if self.cap is not None:
                 self.cap.release()
