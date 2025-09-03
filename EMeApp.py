@@ -20,8 +20,8 @@ class EMeApp(QtWidgets.QMainWindow):
         self.cap = None
         self.is_camera = False
         self.is_processing = False
-        self.current_media_frame = None  # Orijinal medya frame'ini saklamak için
-        self.original_media_frame = None  # İşlenmemiş orijinal frame'i saklamak için
+        self.current_media_frame = None
+        self.original_media_frame = None
 
         face_model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FaceR")
         deploy_path = os.path.join(face_model_dir, "deploy.prototxt")
@@ -63,16 +63,14 @@ class EMeApp(QtWidgets.QMainWindow):
             if frame is None:
                 return
             self.current_media_frame = frame.copy()
-            self.original_media_frame = frame.copy()  # Orijinal frame'i sakla
+            self.original_media_frame = frame.copy()
             self.display_frame(frame)
             self.ui.pushButton_Basla.setEnabled(True)
-            self.ui.pushButton_Kaydet.setEnabled(True)
 
     def opencam(self):
         if self.cap is None:
             self.is_camera = True
             self.ui.pushButton_Basla.setEnabled(True)
-            self.ui.pushButton_Kaydet.setEnabled(True)
             self.cap = cv2.VideoCapture(0)
             if not self.cap.isOpened():
                 QtWidgets.QMessageBox.warning(self, "Hata", "Kamera açılamadı!")
@@ -100,7 +98,6 @@ class EMeApp(QtWidgets.QMainWindow):
             if self.is_camera:
                 frame = cv2.flip(frame, 1)
             
-            # Video için işleme durumuna göre frame'i göster
             if self.is_processing:
                 processed_frame = self.detect_faces(frame)
                 self.display_frame(processed_frame)
@@ -117,6 +114,30 @@ class EMeApp(QtWidgets.QMainWindow):
             if confidence > 0.5:
                 box = detections[0, 0, i, 3:7] * [w, h, w, h]
                 (startX, startY, endX, endY) = box.astype("int")
+                
+                # Kutuyu %25 küçült
+                box_width = endX - startX
+                box_height = endY - startY
+                
+                # Yeni boyutları hesapla (%25 küçült)
+                new_width = int(box_width * 0.70)
+                new_height = int(box_height * 0.70)
+                
+                # Merkezi koruyarak yeniden konumlandır
+                center_x = startX + box_width // 2
+                center_y = startY + box_height // 2
+                
+                startX = center_x - new_width // 2
+                startY = center_y - new_height // 2
+                endX = center_x + new_width // 2
+                endY = center_y + new_height // 2
+                
+                # Sınırları kontrol et (frame dışına çıkmasın)
+                startX = max(0, startX)
+                startY = max(0, startY)
+                endX = min(w, endX)
+                endY = min(h, endY)
+                
                 cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
         return frame
 
@@ -149,14 +170,14 @@ class EMeApp(QtWidgets.QMainWindow):
         self.is_processing = not self.is_processing
         
         if self.is_processing:
+            self.ui.pushButton_Kaydet.setEnabled(True)
             self.ui.pushButton_Basla.setText("Durdur")
-            # Eğer resim dosyası seçilmişse ve işleme başlatılıyorsa
             if not self.is_camera and self.current_media_frame is not None and self.cap is None:
                 processed_frame = self.detect_faces(self.current_media_frame.copy())
                 self.display_frame(processed_frame)
         else:
             self.ui.pushButton_Basla.setText("Başlat")
-            # Eğer resim dosyası seçilmişse ve işleme durduruluyorsa, orijinal frame'i göster
+            self.ui.pushButton_Kaydet.setEnabled(False)
             if not self.is_camera and self.original_media_frame is not None and self.cap is None:
                 self.display_frame(self.original_media_frame)
 
