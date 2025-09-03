@@ -20,9 +20,18 @@ class EMeApp(QtWidgets.QMainWindow):
         self.cap = None
         self.is_camera = False
         self.is_processing = False
-        self.current_frame = None
+        self.current_media_frame = None  # Orijinal medya frame'ini saklamak için
+        self.original_media_frame = None  # İşlenmemiş orijinal frame'i saklamak için
 
-        self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+        face_model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FaceR")
+        deploy_path = os.path.join(face_model_dir, "deploy.prototxt")
+        model_path = os.path.join(face_model_dir, "res10_300x300_ssd_iter_140000.caffemodel")
+
+        if not os.path.exists(deploy_path) or not os.path.exists(model_path):
+            QtWidgets.QMessageBox.critical(self, "Hata", "FaceR klasöründe model dosyaları eksik!")
+            sys.exit()
+
+        self.face_net = cv2.dnn.readNetFromCaffe(deploy_path, model_path)
 
     def closeEvent(self, event):
         if self.cap is not None:
@@ -36,10 +45,8 @@ class EMeApp(QtWidgets.QMainWindow):
                                                    "Media Files (*.png *.jpg *.jpeg *.mp4 *.avi *.mov)")
         if not file_path:
             return
-
         self.is_camera = False
         self.ui.pushButton_KameraAc.setText("Kamerayı Aç")
-
         if file_path.lower().endswith(('.mp4', '.avi', '.mov')):
             if self.cap is not None:
                 self.cap.release()
@@ -55,8 +62,9 @@ class EMeApp(QtWidgets.QMainWindow):
             frame = cv2.imread(file_path)
             if frame is None:
                 return
-            self.current_frame = frame.copy()
-            self.show_frame(frame)
+            self.current_media_frame = frame.copy()
+            self.original_media_frame = frame.copy()  # Orijinal frame'i sakla
+            self.display_frame(frame)
             self.ui.pushButton_Basla.setEnabled(True)
             self.ui.pushButton_Kaydet.setEnabled(True)
 
@@ -81,35 +89,38 @@ class EMeApp(QtWidgets.QMainWindow):
             self.ui.pushButton_Basla.setEnabled(False)
             self.ui.pushButton_Kaydet.setEnabled(False)
             self.ui.pushButton_KameraAc.setText("Kamerayı Aç")
+            self.is_processing = False
+            self.ui.pushButton_Basla.setText("Başlat")
 
     def update_frame(self):
-        if self.cap is None and self.current_frame is None:
+        if self.cap is None:
             return
-
-        if self.is_camera:
-            ret, frame = self.cap.read()
-            if not ret:
-                return
-            frame = cv2.flip(frame, 1)
+        ret, frame = self.cap.read()
+        if ret:
+            if self.is_camera:
+                frame = cv2.flip(frame, 1)
+            
+            # Video için işleme durumuna göre frame'i göster
             if self.is_processing:
-                frame = self.detect_faces(frame)
-            self.show_frame(frame)
-        else:
-            frame = self.current_frame.copy()
-            if self.is_processing:
-                frame = self.detect_faces(frame)
-            self.show_frame(frame)
+                processed_frame = self.detect_faces(frame)
+                self.display_frame(processed_frame)
+            else:
+                self.display_frame(frame)
 
     def detect_faces(self, frame):
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=15)
-        for (x, y, w, h) in faces:
-            if w < 30 or h < 30:
-                continue
-            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        h, w = frame.shape[:2]
+        blob = cv2.dnn.blobFromImage(frame, 1.0, (300, 300), (104.0, 177.0, 123.0))
+        self.face_net.setInput(blob)
+        detections = self.face_net.forward()
+        for i in range(0, detections.shape[2]):
+            confidence = detections[0, 0, i, 2]
+            if confidence > 0.5:
+                box = detections[0, 0, i, 3:7] * [w, h, w, h]
+                (startX, startY, endX, endY) = box.astype("int")
+                cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
         return frame
 
-    def show_frame(self, frame):
+    def display_frame(self, frame):
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         h, w, ch = frame_rgb.shape
         bytes_per_line = ch * w
@@ -120,28 +131,34 @@ class EMeApp(QtWidgets.QMainWindow):
         self.ui.Ekran.setPixmap(scaled_pix)
         self.ui.Ekran.setAlignment(QtCore.Qt.AlignCenter)
 
-    def startprocessing(self):
-        self.is_processing = not self.is_processing
-        self.ui.pushButton_Basla.setText("Durdur" if self.is_processing else "Başlat")
-        if not self.is_camera and self.current_frame is not None:
-            if self.is_processing:
-                frame = self.detect_faces(self.current_frame.copy())
-            else:
-                frame = self.current_frame.copy()
-            self.show_frame(frame)
-
     def openwlfile(self):
-        folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "WhiteList")
-        if not os.path.exists(folder):
-            os.makedirs(folder)
-        os.startfile(folder)
+        program_dir = os.path.dirname(os.path.abspath(__file__))
+        wlfolder = os.path.join(program_dir, "WhiteList")
+        if not os.path.exists(wlfolder):
+            os.makedirs(wlfolder)
+        os.startfile(wlfolder)
 
     def opensavefile(self):
-        folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Saved")
-        if not os.path.exists(folder):
-            os.makedirs(folder)
-        os.startfile(folder)
+        program_dir = os.path.dirname(os.path.abspath(__file__))
+        savefolder = os.path.join(program_dir, "Saved")
+        if not os.path.exists(savefolder):
+            os.makedirs(savefolder)
+        os.startfile(savefolder)
 
+    def startprocessing(self):
+        self.is_processing = not self.is_processing
+        
+        if self.is_processing:
+            self.ui.pushButton_Basla.setText("Durdur")
+            # Eğer resim dosyası seçilmişse ve işleme başlatılıyorsa
+            if not self.is_camera and self.current_media_frame is not None and self.cap is None:
+                processed_frame = self.detect_faces(self.current_media_frame.copy())
+                self.display_frame(processed_frame)
+        else:
+            self.ui.pushButton_Basla.setText("Başlat")
+            # Eğer resim dosyası seçilmişse ve işleme durduruluyorsa, orijinal frame'i göster
+            if not self.is_camera and self.original_media_frame is not None and self.cap is None:
+                self.display_frame(self.original_media_frame)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
