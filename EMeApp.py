@@ -76,11 +76,27 @@ class EMeApp(QtWidgets.QMainWindow):
             return None
         
         try:
-            # Gri görüntüyü RGB'ye çevir
+            # Görüntüyü uygun boyuta getir (minimum 64x64)
+            if face_image.shape[0] < 64 or face_image.shape[1] < 64:
+                face_image = cv2.resize(face_image, (64, 64))
+            
+            # Görüntüyü uygun formata dönüştür
             if len(face_image.shape) == 2:
+                # Gri görüntüyü RGB'ye çevir
                 rgb_face = cv2.cvtColor(face_image, cv2.COLOR_GRAY2RGB)
-            else:
+            elif face_image.shape[2] == 4:
+                # RGBA'yı RGB'ye çevir
+                rgb_face = cv2.cvtColor(face_image, cv2.COLOR_RGBA2RGB)
+            elif face_image.shape[2] == 3:
+                # BGR'yi RGB'ye çevir
                 rgb_face = cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB)
+            else:
+                print(f"Desteklenmeyen görüntü formatı: {face_image.shape}")
+                return None
+            
+            # 8-bit formatına dönüştür ve normalize et
+            if rgb_face.dtype != np.uint8:
+                rgb_face = (rgb_face * 255).astype(np.uint8)
             
             # Yüz embedding'leri çıkar
             encodings = face_recognition.face_encodings(rgb_face)
@@ -132,16 +148,24 @@ class EMeApp(QtWidgets.QMainWindow):
         try:
             image = cv2.imread(image_path)
             if image is None:
+                print(f"Görüntü yüklenemedi: {image_path}")
                 return
             
-            # Yüzleri bul ve encode et
+            # Görüntüyü RGB formatına dönüştür
             rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            
+            # 8-bit formatını kontrol et
+            if rgb_image.dtype != np.uint8:
+                rgb_image = (rgb_image * 255).astype(np.uint8)
+            
+            # Yüzleri bul ve encode et
             face_locations = face_recognition.face_locations(rgb_image)
             face_encodings = face_recognition.face_encodings(rgb_image, face_locations)
             
             for encoding in face_encodings:
                 self.known_face_encodings.append(encoding)
                 self.known_face_names.append(person_name)
+                print(f"Eğitim: {person_name} için yüz eklendi")
                 
         except Exception as e:
             print(f"{image_path} işlenirken hata: {e}")
@@ -269,7 +293,6 @@ class EMeApp(QtWidgets.QMainWindow):
     
     def detect_and_compare_faces(self, frame, detections, h, w):
         """Yüzleri algıla ve WhiteList ile karşılaştır - Geliştirilmiş"""
-        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         
         for i in range(0, detections.shape[2]):
             confidence = detections[0, 0, i, 2]
@@ -289,9 +312,14 @@ class EMeApp(QtWidgets.QMainWindow):
                 endX = min(w, center_x + new_width // 2)
                 endY = min(h, center_y + new_height // 2)
                 
-                face_roi = gray_frame[startY:endY, startX:endX]
+                # Yüz bölgesini al (RGB formatında)
+                face_roi = frame[startY:endY, startX:endX]
                 if face_roi.size > 0:
                     try:
+                        # Yüz bölgesini minimum boyuta getir
+                        if face_roi.shape[0] < 20 or face_roi.shape[1] < 20:
+                            continue
+                            
                         name, similarity = self.recognize_face(face_roi)
                         similarity_percent = int(similarity * 100)
                         
