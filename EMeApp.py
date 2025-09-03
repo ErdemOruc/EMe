@@ -111,28 +111,19 @@ class EMeApp(QtWidgets.QMainWindow):
         detections = self.face_net.forward()
         for i in range(0, detections.shape[2]):
             confidence = detections[0, 0, i, 2]
-            if confidence > 0.5:
+            if confidence > 0.20:
                 box = detections[0, 0, i, 3:7] * [w, h, w, h]
                 (startX, startY, endX, endY) = box.astype("int")
-                
-                # Kutuyu %25 küçült
                 box_width = endX - startX
                 box_height = endY - startY
-                
-                # Yeni boyutları hesapla (%25 küçült)
                 new_width = int(box_width * 0.70)
                 new_height = int(box_height * 0.70)
-                
-                # Merkezi koruyarak yeniden konumlandır
                 center_x = startX + box_width // 2
                 center_y = startY + box_height // 2
-                
                 startX = center_x - new_width // 2
                 startY = center_y - new_height // 2
                 endX = center_x + new_width // 2
                 endY = center_y + new_height // 2
-                
-                # Sınırları kontrol et (frame dışına çıkmasın)
                 startX = max(0, startX)
                 startY = max(0, startY)
                 endX = min(w, endX)
