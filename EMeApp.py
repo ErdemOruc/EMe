@@ -20,19 +20,15 @@ class EMeApp(QtWidgets.QMainWindow):
         self.ui.pushButton_MedyaSec.clicked.connect(self.openmedia)
         self.ui.pushButton_Basla.clicked.connect(self.startprocessing)
         self.ui.pushButton_Model_Egit.clicked.connect(self.train_whitelist_model)
-        
         self.is_processing = False
         self.current_media_frame = None
         self.original_media_frame = None
-        
         self.whitelist_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "WhiteList")
         if not os.path.exists(self.whitelist_dir):
             os.makedirs(self.whitelist_dir)
-        
         self.whitelist_embeddings = []
         self.embeddings_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "whitelist_embeddings.pkl")
         self.whitelist_hash_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "whitelist_hash.txt")
-        
         self.yolo_model = None
         self.load_yolo_model()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -73,7 +69,6 @@ class EMeApp(QtWidgets.QMainWindow):
         return False
 
     def save_embeddings_and_hash(self):
-        """Embedding'leri ve whitelist hash'ini kaydet"""
         current_hash = self.calculate_whitelist_hash()
         
         with open(self.embeddings_file, 'wb') as f:
@@ -86,7 +81,9 @@ class EMeApp(QtWidgets.QMainWindow):
 
     def load_yolo_model(self):
         try:
-            self.yolo_model = YOLO('yolov8n-face.pt')
+            self.yolo_model = YOLO('yolov8n-face.pt') # yolov8n-face.pt / yolov8m-face.pt / yolov8l-face.pt
+            
+        
             print("YOLO model başarıyla yüklendi")
         except Exception as e:
             print(f"YOLO model yükleme hatası: {e}")
@@ -177,7 +174,7 @@ class EMeApp(QtWidgets.QMainWindow):
                     current_similarity = self.cosine_similarity_fast(face_embedding, w_embedding)
                     max_similarity = max(max_similarity, current_similarity)
                     
-                    if current_similarity > 0.70:
+                    if current_similarity > 0.70: #Eşik değeri
                         color = (0, 255, 0)
                         break
                 
@@ -198,7 +195,6 @@ class EMeApp(QtWidgets.QMainWindow):
         return dot_product / (norm_a * norm_b) if norm_a > 0 and norm_b > 0 else 0.0
 
     def train_whitelist_model(self):
-        # Önce kontrol et, belki zaten güncel
         if self.load_embeddings_if_valid():
             if QMessageBox.question(self, "Soru", 
                                   "Model zaten güncel görünüyor. Yine de yeniden eğitmek istiyor musunuz?",
