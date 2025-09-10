@@ -70,29 +70,13 @@
     <string>Resim/Video Seç</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton_Kaydedilenler">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
+  <widget class="QPushButton" name="pushButton_WhiteListEdit">
    <property name="geometry">
     <rect>
      <x>390</x>
      <y>740</y>
      <width>211</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Kaydedilenler</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButton_WhiteListEdit">
-   <property name="geometry">
-    <rect>
-     <x>390</x>
-     <y>780</y>
-     <width>211</width>
-     <height>31</height>
+     <height>71</height>
     </rect>
    </property>
    <property name="toolTip">
@@ -102,9 +86,9 @@
     <string>WhiteList Ekle/Çıkar</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton_Kaydet">
+  <widget class="QPushButton" name="pushButton_Model_Egit">
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="geometry">
     <rect>
@@ -115,7 +99,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Medya Kaydet</string>
+    <string>Modeli Eğit</string>
    </property>
   </widget>
   <widget class="QLabel" name="Ekran">
