@@ -42,7 +42,7 @@ class Ui_AnaMenu(object):
 
     def retranslateUi(self, AnaMenu):
         _translate = QtCore.QCoreApplication.translate
-        AnaMenu.setWindowTitle(_translate("AnaMenu", "ExceptMe"))
+        AnaMenu.setWindowTitle(_translate("AnaMenu", "EMe"))
         self.pushButton_Basla.setText(_translate("AnaMenu", "Başlat"))
         self.pushButton_MedyaSec.setToolTip(_translate("AnaMenu", "İstenilen medyayı seçiniz."))
         self.pushButton_MedyaSec.setText(_translate("AnaMenu", "Resim Seç"))

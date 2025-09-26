@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>ExceptMe</string>
+   <string>EMe</string>
   </property>
   <widget class="QPushButton" name="pushButton_Basla">
    <property name="enabled">
