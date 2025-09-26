@@ -45,7 +45,7 @@ class Ui_AnaMenu(object):
         AnaMenu.setWindowTitle(_translate("AnaMenu", "ExceptMe"))
         self.pushButton_Basla.setText(_translate("AnaMenu", "Başlat"))
         self.pushButton_MedyaSec.setToolTip(_translate("AnaMenu", "İstenilen medyayı seçiniz."))
-        self.pushButton_MedyaSec.setText(_translate("AnaMenu", "Resim/Video Seç"))
+        self.pushButton_MedyaSec.setText(_translate("AnaMenu", "Resim Seç"))
         self.pushButton_WhiteListEdit.setToolTip(_translate("AnaMenu", "Eklemek istediğiniz kişinin resmini dosyaya bırakınız.(Birden fazla tavsiye edilir.)"))
         self.pushButton_WhiteListEdit.setText(_translate("AnaMenu", "WhiteList Ekle/Çıkar"))
         self.pushButton_Model_Egit.setText(_translate("AnaMenu", "Modeli Eğit"))

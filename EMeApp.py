@@ -284,7 +284,6 @@ class EMeApp(QtWidgets.QMainWindow):
             progress_dialog.close()
             
             if successful_count > 0:
-                # Embedding'leri ve hash'i kaydet
                 self.save_embeddings_and_hash()
                 QMessageBox.information(self, "Model Eğitimi", 
                                       f"{successful_count}/{len(image_files)} yüz başarıyla eğitildi!")

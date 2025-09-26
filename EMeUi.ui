@@ -54,7 +54,7 @@
     <string>İstenilen medyayı seçiniz.</string>
    </property>
    <property name="text">
-    <string>Resim/Video Seç</string>
+    <string>Resim Seç</string>
    </property>
   </widget>
   <widget class="QPushButton" name="pushButton_WhiteListEdit">
