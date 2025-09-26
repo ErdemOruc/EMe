@@ -6,6 +6,3 @@ EMe App - Beta
 177. satırda recognize_face fonksiyonu içerisindeki current_similarity ile beraber eşik değeri belirlenebilir.
 
 Hali hazırda eğitilmiş şekildedir. Test etmek için resim seçerken TestPics içindeki görseller kullanılabilir.
-
-
-
